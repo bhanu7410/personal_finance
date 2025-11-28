@@ -1,6 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { StackProvider, StackTheme } from "@stackframe/stack";
 import { stackClientApp } from "../stack/client";
+import { UserProvider } from "@/components/UserProvider";
+import { Suspense } from "react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,7 +27,15 @@ export default function RootLayout({ children }) {
                 className={`${geistSans.variable} ${geistMono.variable} antialiased dark:bg-zinc-900`}
             >
                 <StackProvider app={stackClientApp}>
-                    <StackTheme>{children}</StackTheme>
+                    <StackTheme>
+                        <Suspense
+                            fallback={
+                                <div className="p-4">Loading session...</div>
+                            }
+                        >
+                            <UserProvider>{children}</UserProvider>
+                        </Suspense>
+                    </StackTheme>
                 </StackProvider>
             </body>
         </html>
