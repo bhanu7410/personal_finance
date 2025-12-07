@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --------------------------------------
+// USER & AUTH
+// --------------------------------------
+
+model User {
+  id           Int           @id @default(autoincrement())
+  
+  // Auth & Identity
+  externalId   String        @unique  // ID from Stack Auth
+  email        String        @unique
+  name         String?
+  upi_id       String?       @unique  // Useful for settlements
+  createdAt    DateTime      @default(now())
+  
+  // Relations
+  groups       UserGroup[]   // Groups this user belongs to
+  
+  // Financial Relations
+  splits       Split[]       // Expenses shared with this user
+  
+  // "Money Out" - Transactions where this user PAID
+  sentTransactions     Transaction[]  @relation("Payer")
+  
+  // "Money In" - Transactions where this user RECEIVED money (Settlements or Income)
+  receivedTransactions Transaction[]  @relation("Recipient")
+  
+  // Custom Categories created by this user
+  createdCategories    Category[]
+}
+
+// --------------------------------------
+// GROUPS
+// --------------------------------------
+
+model Group {
+  id           Int           @id @default(autoincrement())
+  name         String
+  createdAt    DateTime      @default(now())
+  
+  // Relations
+  members      UserGroup[]
+  transactions Transaction[]
+}
+
+// Many-to-Many Join Table for Users <-> Groups
+model UserGroup {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  groupId   Int
+  joinedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  group     Group    @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId]) // A user can't be in the same group twice
+}
+
+// --------------------------------------
+// CATEGORIES (Dynamic & Hierarchical)
+// --------------------------------------
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String
+  type        TransactionType @default(EXPENSE) // Helps filter UI (Income vs Expense categories)
+  
+  // 1. SYSTEM vs CUSTOM Logic
+  // If userId is NULL -> It is a "System Default" (e.g., Food, Travel)
+  // If userId is SET  -> It is a "Custom Category" specific to that user
+  userId      Int?
+  user        User?    @relation(fields: [userId], references: [id])
+
+  // 2. SUB-CATEGORY Logic (Self-Relation)
+  // If parentId is SET, this is a sub-category (e.g., parent="Food", this="Pizza")
+  parentId    Int?
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+
+  // Relation
+  transactions Transaction[]
+
+  // Constraint: A user cannot have two categories with the same name under the same parent
+  @@unique([name, userId, parentId])
+}
+
+// --------------------------------------
+// TRANSACTIONS (The Central Hub)
+// --------------------------------------
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  amount      Decimal  @db.Decimal(12, 2)
+  description String
+  date        DateTime @default(now())
+  
+  // Defines if this is an Expense, Income, or Settlement
+  type        TransactionType 
+
+  // CATEGORY (Link to the dynamic table)
+  categoryId  Int?     
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  // ------------------------------------
+  // MONEY MOVEMENT LOGIC
+  // ------------------------------------
+
+  // 1. The PAYER (Source of funds)
+  // If Null -> External Source (Company paying salary, Cashback, etc.)
+  payerId     Int?
+  payer       User?    @relation("Payer", fields: [payerId], references: [id])
+  externalPayerName String? // e.g., "Google", "Client X" (Used if payerId is null)
+
+  // 2. The RECIPIENT (Destination of funds)
+  // If Null -> Merchant/Shop (Standard Expense)
+  // If Set  -> User (Settlement/Debt repayment OR Income)
+  recipientId Int?
+  recipient   User?    @relation("Recipient", fields: [recipientId], references: [id])
+
+  // ------------------------------------
+  // CONTEXT
+  // ------------------------------------
+
+  groupId     Int?     
+  group       Group?   @relation(fields: [groupId], references: [id])
+
+  // How the cost is divided (Used for EXPENSE type)
+  splits      Split[]
+}
+
+// --------------------------------------
+// SPLITS (The "Splitwise" Math)
+// --------------------------------------
+
+model Split {
+  id            Int         @id @default(autoincrement())
+  amount        Decimal     @db.Decimal(12, 2) // How much THIS user owes for this transaction
+  
+  userId        Int
+  user          User        @relation(fields: [userId], references: [id])
+  
+  transactionId Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+}
+
+// --------------------------------------
+// ENUMS
+// --------------------------------------
+
+enum TransactionType {
+  EXPENSE      // Payer: User -> Recipient: Null (Merchant)
+  INCOME       // Payer: Null (External) -> Recipient: User
+  SETTLEMENT   // Payer: User A -> Recipient: User B
+}

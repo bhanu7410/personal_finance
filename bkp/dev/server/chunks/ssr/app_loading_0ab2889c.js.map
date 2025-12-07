@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///Users/bhanuprabhath/Desktop/project/personal-finance/app/loading.js"],"sourcesContent":["export default function Loading() {\n\n\t// Stack uses React Suspense, which will render this page while user data is being fetched.\n\t// See: https://nextjs.org/docs/app/api-reference/file-conventions/loading\n\treturn <></>;\n}\n"],"names":[],"mappings":";;;;;;AAAe,SAAS;IAEvB,2FAA2F;IAC3F,0EAA0E;IAC1E,qBAAO;AACR"}}]
+}
