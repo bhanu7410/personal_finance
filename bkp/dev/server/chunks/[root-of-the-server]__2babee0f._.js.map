@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 34, "column": 0}, "map": {"version":3,"sources":["file:///Users/bhanuprabhath/Desktop/project/personal-finance/app/api/test-env/route.js"],"sourcesContent":["export function GET() {\n    return Response.json({\n        DATABASE_URL: process.env.DATABASE_URL ?? \"MISSING\",\n    });\n}\n"],"names":[],"mappings":";;;;AAAO,SAAS;IACZ,OAAO,SAAS,IAAI,CAAC;QACjB,cAAc,QAAQ,GAAG,CAAC,YAAY,IAAI;IAC9C;AACJ"}}]
-}
