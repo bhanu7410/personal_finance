@@ -9,7 +9,7 @@ export default async function SignInPage() {
         redirect("/dashboard");
     }
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-purple-50 to-purple-100">
+        <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-purple-50 to-purple-100">
             <div className="w-full max-w-md space-y-8">
                 <SignIn />
                 <Link href="/"> Go Back Home</Link>

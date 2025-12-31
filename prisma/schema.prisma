@@ -6,9 +6,167 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../app/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// 1. The User
+model User {
+  id         String   @id @default(cuid())
+  externalId String   @unique 
+  email      String   @unique
+  name       String?
+  
+  // Relationships
+  ownedGroups     Group[]       @relation("GroupOwner")
+  memberships     GroupMember[]
+  
+  transactionsPaid Transaction[] @relation("Payer") // Renamed from Expense
+  splitsOwed       Split[]       @relation("Debtor")
+  
+  // Categories created by this user
+  categories      Category[]
+
+  // Settlement Relationships
+  sentPayments     Payment[] @relation("PaymentSender")
+  receivedPayments Payment[] @relation("PaymentReceiver")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 2. The Group
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  currency    String   @default("INR")
+  
+  ownerId     String
+  owner       User     @relation("GroupOwner", fields: [ownerId], references: [id])
+  
+  members      GroupMember[]
+  transactions Transaction[] // Renamed from Expense
+  payments     Payment[]     // Track settlements within the group
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  userId    String
+  groupId   String
+  joinedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  group     Group    @relation(fields: [groupId], references: [id])
+
+  role GroupRole @default(MEMBER)
+
+  @@unique([userId, groupId])
+}
+
+// 3. Categories (Hybrid: System Defaults + User Custom)
+model Category {
+  id      String       @id @default(cuid())
+  name    String
+  type    CategoryType
+  icon    String?      // e.g. "🍔", "fa-home"
+
+  // If userId is null, it's a global system category
+  userId  String?
+  user    User?   @relation(fields: [userId], references: [id])
+  
+  transactions Transaction[]
+
+  @@unique([name, userId]) // Prevent duplicates for the same user
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+}
+
+// 4. Transaction (Formerly Expense)
+// Renamed to generic "Transaction" to handle Expenses AND Income comfortably
+model Transaction {
+  id          String   @id @default(cuid())
+  description String
+  amount      Decimal  @db.Decimal(10, 2)
+  date        DateTime @default(now())
+  currency    String   @default("INR") // Allow transaction to differ from Group currency
+  receiptUrl  String?  // For storing S3 image URLs of bills
+
+  // Who paid?
+  payerId     String
+  payer       User     @relation("Payer", fields: [payerId], references: [id])
+
+  // Context
+  groupId     String?
+  group       Group?   @relation(fields: [groupId], references: [id])
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  // The Splits
+  splits      Split[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime? // Soft Delete
+
+  @@index([groupId, date])
+  @@index([payerId])
+
+}
+
+// 5. The Split (The "Splitwise" logic)
+// If I pay 1000 for dinner for me and you:
+// Expense Amount: 1000
+// Split 1: Me, Amount: 500
+// Split 2: You, Amount: 500
+model Split {
+  id        String   @id @default(cuid())
+  amount    Decimal  @db.Decimal(10, 2)
+  
+  transactionId String
+  transaction   Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation("Debtor", fields: [userId], references: [id])
+
+  // Removed isSettled logic. Settlement is calculated by:
+  // (Sum of Splits Owed) - (Sum of Payments Sent)
+  
+  @@index([transactionId])
+  @@index([userId])
+}
+
+// 6. Payments / Settlements
+// Represents me paying you back via UPI/Cash to lower my balance
+model Payment {
+  id          String   @id @default(cuid())
+  amount      Decimal  @db.Decimal(10, 2)
+  date        DateTime @default(now())
+  
+  // Logic: Sender pays Receiver
+  senderId    String
+  sender      User     @relation("PaymentSender", fields: [senderId], references: [id])
+
+  receiverId  String
+  receiver    User     @relation("PaymentReceiver", fields: [receiverId], references: [id])
+
+  groupId     String
+  group       Group    @relation(fields: [groupId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
