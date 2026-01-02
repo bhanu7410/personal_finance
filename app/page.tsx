@@ -13,7 +13,7 @@ export default function Home() {
                     <Link href="/sign-in">Sign In</Link>
                 </div>
                 <div className="cursor-pointer rounded-xl border-2 border-purple-500 bg-purple-500 px-4 py-2 text-white duration-200 ease-in hover:bg-purple-200 hover:text-black">
-                    Learn More
+                    <Link href="/dashboard">Learn More</Link>
                 </div>
             </div>
         </div>
