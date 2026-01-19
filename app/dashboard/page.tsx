@@ -3,20 +3,22 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getUserFinancialSummary } from "@/lib/accountBalance";
 import { getDashboardChartData } from "./lib/getDashboardChartData";
+import { getCategoryStats } from "./lib/getCategoryStats"; // <--- NEW IMPORT
 import { BalanceChart } from "@/components/BalanceChart";
+import { CategoriesPieChart } from "@/components/CategoriesPieChart";
+
 import {
     TrendingUp,
     TrendingDown,
     ArrowUpRight,
     ArrowDownLeft,
-    PieChart as PieIcon,
 } from "lucide-react";
 
 // Helper for cleaner currency display
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
         style: "currency",
-        currency: "USD",
+        currency: "INR",
     }).format(amount);
 };
 
@@ -32,12 +34,13 @@ export default async function DashboardPage() {
         recentTransactions,
         recentPayments,
         financialSummary,
+        categoryStats, // <--- NEW DATA VARIABLE
     ] = await Promise.all([
         prisma.transaction.count({ where: { payerId: currentUserId } }),
         prisma.transaction.findMany({
             where: { payerId: currentUserId },
             orderBy: { createdAt: "desc" },
-            take: 10, // Fetch more to make the scrollable list look good
+            take: 10,
             include: { category: true },
         }),
         prisma.payment.findMany({
@@ -52,6 +55,7 @@ export default async function DashboardPage() {
             include: { receiver: true, sender: true },
         }),
         getUserFinancialSummary(currentUserId),
+        getCategoryStats(currentUserId), // <--- FETCHING PIE DATA
     ]);
 
     // 2. FETCH CHART DATA
@@ -85,7 +89,7 @@ export default async function DashboardPage() {
         }),
     ]
         .sort((a, b) => b.date.getTime() - a.date.getTime())
-        .slice(0, 10); // Show top 10 in the scrollable list
+        .slice(0, 10);
 
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50">
@@ -217,33 +221,19 @@ export default async function DashboardPage() {
                     {/* RIGHT COLUMN: Split Top/Bottom */}
                     <div className="flex min-h-0 flex-col gap-6">
                         {/* Top Right: Line Chart */}
-                        <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                            <h2 className="mb-4 shrink-0 text-sm font-semibold text-gray-900">
+                        <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-gray-200 bg-white pb-5 shadow-sm">
+                            <h2 className="mb-4 shrink-0 border-b border-neutral-100 px-5 pt-5 pb-1 font-semibold text-gray-900">
                                 Balance History (10 Days)
                             </h2>
-                            <div className="min-h-0 flex-1">
-                                <BalanceChart data={chartData} />
-                            </div>
+                            <BalanceChart data={chartData} />
                         </div>
 
-                        {/* Bottom Right: Pie Chart Placeholder */}
-                        <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                            <h2 className="mb-4 shrink-0 text-sm font-semibold text-gray-900">
+                        {/* Bottom Right: Pie Chart */}
+                        <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-gray-200 bg-white pb-5 shadow-sm">
+                            <h2 className="mb-4 shrink-0 border-b border-neutral-100 px-5 pt-5 pb-1 font-semibold text-gray-900">
                                 Spending by Category
                             </h2>
-                            <div className="flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-gray-100 bg-gray-50">
-                                <div className="text-center">
-                                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                                        <PieIcon className="h-6 w-6 text-blue-600" />
-                                    </div>
-                                    <h3 className="mt-2 text-sm font-medium text-gray-900">
-                                        Coming Soon
-                                    </h3>
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Pie chart data will appear here.
-                                    </p>
-                                </div>
-                            </div>
+                            <CategoriesPieChart data={categoryStats} />
                         </div>
                     </div>
                 </div>
