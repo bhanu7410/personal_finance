@@ -1,14 +1,14 @@
 "use client";
 
-import { ResponsiveLine } from "@nivo/line"; // Removed 'Serie' import
+import { ResponsiveLine } from "@nivo/line";
 import { ChartLineIcon } from "lucide-react";
+import { useMemo } from "react";
 
 interface BalanceDataPoint {
     date: string;
     balance: number;
 }
 
-// 1. Define the type locally to fix the import error
 interface NivoSeriesData {
     id: string;
     data: { x: string; y: number }[];
@@ -28,6 +28,48 @@ const dateFormatter = (dateString: string) => {
 };
 
 export function BalanceChart({ data }: { data: BalanceDataPoint[] }) {
+    // 1. SIMPLIFIED LOGIC
+    // Take min - 30% and max + 15% to create breathing room
+    const { yMin, yMax, tickValues } = useMemo(() => {
+        if (!data || data.length === 0)
+            return { yMin: 0, yMax: 100, tickValues: [0, 25, 50, 75, 100] };
+
+        const values = data.map((d) => d.balance);
+        const rawMin = Math.min(...values);
+        const rawMax = Math.max(...values);
+
+        // Calculate rough targets
+        let targetMin = rawMin - Math.abs(rawMin) * 0.1; // Go 30% lower
+        let targetMax = rawMax + Math.abs(rawMax) * 0.05; // Go 15% higher
+
+        // Special case: Flat line
+        if (rawMin === rawMax) {
+            targetMin = rawMin - 100;
+            targetMax = rawMax + 100;
+        }
+
+        // Round to "nice" numbers (e.g. nearest 100 or 1000)
+        // We use the range to decide what "nice" means
+        const range = targetMax - targetMin;
+        const magnitude = Math.pow(10, Math.floor(Math.log10(range))); // e.g. 100, 1000
+
+        // Round down the min, Round up the max
+        const niceMin = Math.floor(targetMin / magnitude) * magnitude;
+        const niceMax = Math.ceil(targetMax / magnitude) * magnitude;
+
+        // Generate exactly 5 evenly spaced ticks
+        const step = (niceMax - niceMin) / 4;
+        const ticks = [
+            niceMin,
+            niceMin + step,
+            niceMin + step * 2,
+            niceMin + step * 3,
+            niceMax,
+        ];
+
+        return { yMin: niceMin, yMax: niceMax, tickValues: ticks };
+    }, [data]);
+
     if (!data || data.length === 0) {
         return (
             <div className="mx-7 flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-gray-100 bg-gray-50 pr-5">
@@ -47,7 +89,6 @@ export function BalanceChart({ data }: { data: BalanceDataPoint[] }) {
         );
     }
 
-    // 2. Use the local interface here
     const nivoData: NivoSeriesData[] = [
         {
             id: "Balance",
@@ -63,11 +104,28 @@ export function BalanceChart({ data }: { data: BalanceDataPoint[] }) {
             <ResponsiveLine
                 data={nivoData}
                 margin={{ top: 20, right: 20, bottom: 40, left: 80 }}
+                theme={{
+                    axis: {
+                        domain: {
+                            line: {
+                                stroke: "#E5E7EB",
+                                strokeWidth: 1,
+                            },
+                        },
+                    },
+                    grid: {
+                        line: {
+                            stroke: "#E5E7EB",
+                            strokeWidth: 1,
+                            strokeDasharray: "4 4",
+                        },
+                    },
+                }}
                 xScale={{ type: "point" }}
                 yScale={{
                     type: "linear",
-                    min: "auto",
-                    max: "auto",
+                    min: yMin,
+                    max: yMax,
                     stacked: false,
                     reverse: false,
                 }}
@@ -92,13 +150,14 @@ export function BalanceChart({ data }: { data: BalanceDataPoint[] }) {
                 }}
                 axisLeft={{
                     tickSize: 0,
-                    tickPadding: 15,
+                    tickPadding: 20,
                     tickRotation: 0,
                     format: (value) => currencyFormatter(value as number),
+                    tickValues: tickValues, // <--- Using our specific 5 ticks
                 }}
                 enableGridX={false}
                 enableGridY={true}
-                gridYValues={4}
+                gridYValues={tickValues} // <--- Using our specific 5 ticks
                 sliceTooltip={({ slice }) => {
                     return (
                         <div className="rounded-lg border border-gray-100 bg-white p-3 shadow-lg">
