@@ -200,9 +200,9 @@ export default async function DashboardPage() {
                                         {formatCurrency(item.amount)}
                                     </div>
                                     <div className="text-xs text-gray-400">
-                                        {new Date(
-                                            item.date,
-                                        ).toLocaleDateString("en-US")}
+                                        {new Date(item.date).toLocaleDateString(
+                                            "en-US",
+                                        )}
                                     </div>
                                 </div>
                             </div>
