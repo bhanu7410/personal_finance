@@ -2,7 +2,8 @@
 
 import { ResponsivePie, ComputedDatum } from "@nivo/pie"; // Added ComputedDatum
 import { PieChart as PieIcon } from "lucide-react";
-import { MouseEvent } from "react"; // Added MouseEvent
+import { MouseEvent, useSyncExternalStore } from "react"; // Added MouseEvent, useSyncExternalStore
+import { ChartSkeleton } from "./ChartSkeleton";
 
 interface CategoryData {
     name: string;
@@ -34,6 +35,16 @@ const formatCurrency = (value: number) => {
 };
 
 export function CategoriesPieChart({ data }: { data: CategoryData[] }) {
+    const isMounted = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    );
+
+    if (!isMounted) {
+        return <ChartSkeleton type="pie" />;
+    }
+
     if (!data || data.length === 0) {
         return (
             <div className="mx-7 flex flex-1 items-center justify-center rounded-lg border-2 border-dashed border-gray-100 bg-gray-50">

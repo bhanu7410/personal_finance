@@ -2,7 +2,8 @@
 
 import { ResponsiveLine } from "@nivo/line";
 import { ChartLineIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
+import { ChartSkeleton } from "./ChartSkeleton";
 
 interface BalanceDataPoint {
     date: string;
@@ -28,6 +29,12 @@ const dateFormatter = (dateString: string) => {
 };
 
 export function BalanceChart({ data }: { data: BalanceDataPoint[] }) {
+    const isMounted = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    );
+
     // 1. SIMPLIFIED LOGIC
     // Take min - 30% and max + 15% to create breathing room
     const { yMin, yMax, tickValues } = useMemo(() => {
@@ -69,6 +76,10 @@ export function BalanceChart({ data }: { data: BalanceDataPoint[] }) {
 
         return { yMin: niceMin, yMax: niceMax, tickValues: ticks };
     }, [data]);
+
+    if (!isMounted) {
+        return <ChartSkeleton type="line" />;
+    }
 
     if (!data || data.length === 0) {
         return (

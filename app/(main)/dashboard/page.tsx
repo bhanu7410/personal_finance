@@ -1,4 +1,3 @@
-import Sidebar from "@/components/sidebar";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getUserFinancialSummary } from "@/lib/accountBalance";
@@ -92,7 +91,7 @@ export default async function DashboardPage() {
         .slice(0, 10);
 
     return (
-        <main className="ml-64 flex h-full flex-1 flex-col p-6">
+        <main className="flex h-full flex-1 flex-col p-6">
             {/* Header */}
             <div className="mb-6 shrink-0">
                 <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
@@ -203,7 +202,7 @@ export default async function DashboardPage() {
                                     <div className="text-xs text-gray-400">
                                         {new Date(
                                             item.date,
-                                        ).toLocaleDateString()}
+                                        ).toLocaleDateString("en-US")}
                                     </div>
                                 </div>
                             </div>
