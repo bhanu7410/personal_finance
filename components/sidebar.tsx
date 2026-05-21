@@ -17,7 +17,7 @@ export default function Sidebar() {
 
     const navigation = [
         { name: "Dashboard", href: "/dashboard", icon: HandCoins },
-        { name: "Transactions", href: "/Transactions", icon: BadgeDollarSign },
+        { name: "Transactions", href: "/transactions", icon: BadgeDollarSign },
         { name: "Groups", href: "/groups", icon: Users },
         { name: "Reports", href: "/reports", icon: ClipboardPlus },
         { name: "Settings", href: "/settings", icon: SlidersHorizontal },
