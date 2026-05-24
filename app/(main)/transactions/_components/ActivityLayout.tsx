@@ -68,12 +68,6 @@ export function ActivityLayout({ data }: { data: ActivityItem[] }) {
                         : undefined
                 }
             >
-                <div className="shrink-0 border-b border-gray-100 p-5">
-                    <h2 className="font-semibold text-gray-900">
-                        Recent Activity
-                    </h2>
-                </div>
-
                 <ActivityList
                     data={data}
                     selectedItem={selectedItem}

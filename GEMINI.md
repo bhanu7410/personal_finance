@@ -1,45 +1,90 @@
 # Project Instructions: Personal Finance
 
-This is a personal finance management application built with Next.js, Tailwind CSS, Prisma, and Stack for authentication.
+This is a personal finance management application built with Next.js 16 (React 19), Tailwind CSS 4, Prisma, and Stack for authentication. It features a split-ledger system for tracking group expenses and settlements.
 
 ## Tech Stack
-- **Framework:** Next.js (App Router)
+
+- **Framework:** Next.js (App Router, React 19)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS 4
-- **Database/ORM:** PostgreSQL with Prisma
+- **Database/ORM:** PostgreSQL with Prisma 7.2.0 (Client)
 - **Authentication:** [Stack](https://stackframe.com/) (`@stackframe/stack`)
+- **Data Table:** TanStack Table (`@tanstack/react-table`)
 - **Charts:** Nivo and Recharts
 - **Icons:** Lucide React
 
 ## Project Structure
+
 - `app/`: Next.js App Router directory.
     - `(auth)/`: Authentication-related routes (e.g., `/sign-in`).
-    - `(main)/`: Main application routes (Dashboard, Transactions, etc.).
-        - `dashboard/_lib/`: Route-specific logic for the dashboard.
-- `components/`: Reusable UI components.
-- `lib/`: Shared utility functions and server-side logic (e.g., Prisma client, auth helpers).
-- `prisma/`: Prisma schema and migrations.
+    - `(main)/`: Main application routes.
+        - `dashboard/`: Financial summary and charts.
+            - `_lib/`: Dashboard-specific data fetching logic (e.g., `getCategoryStats.ts`).
+        - `transactions/`: Transaction and settlement history.
+            - `_components/`: Activity list, detail views, and resizable layout components.
+- `components/`: Reusable UI components (Sidebar, Charts, Skeletons).
+- `lib/`: Shared utility functions and server-side logic.
+    - `auth.ts`: Authentication helpers.
+    - `prisma.ts`: Prisma client instance.
+    - `accountBalance.ts`: Core financial logic for realized/unrealized balances.
+- `prisma/`: Prisma schema and migrations. Uses a split-ledger model (Transaction, Split, Payment).
 - `stack/`: Stack configuration files.
-- `public/`: Static assets.
 
-## Key Conventions & Workflows
-- **Authentication:** Use `getCurrentUser()` from `@/lib/auth` to get the current user in Server Components.
-- **Database:** Use the Prisma client instance from `@/lib/prisma`.
-- **Navigation:** The `Sidebar` component in `components/sidebar.tsx` handles main navigation.
-- **Styling:** Use Tailwind CSS 4 utility classes. Prefer Vanilla CSS for complex custom styles if needed, but stay within the Tailwind ecosystem where possible.
-- **Charts:** Use `@nivo` or `recharts` for data visualization.
-- **Icons:** Use `lucide-react` for consistent iconography.
+## Key Conventions & Architectural Patterns
+
+### 1. Authentication
+
+- Use `getCurrentUser()` from `@/lib/auth` in Server Components to identify the authenticated user.
+- Routes are protected via the `(main)` layout or individual page checks.
+
+### 2. Database & Data Fetching
+
+- **Client:** Use the Prisma client from `@/lib/prisma`.
+- **Parallelism:** Utilize `Promise.all` for concurrent data fetching in Server Components to minimize waterfall delays.
+- **Soft Deletes:** Always filter for `deletedAt: null` when querying `Transaction` records.
+- **Decimal Handling:** Prisma returns `Decimal` objects for amount fields. Convert them using `.toNumber()` for client-side consumption or arithmetic.
+
+### 3. Split-Ledger Financial Model
+
+The app tracks finances across three main views (see `lib/accountBalance.ts`):
+
+- **Realized (Cash Flow):** (Income + Settlements In) - (Full Bills Paid + Settlements Out).
+- **Unrealized (Social/Split):** Pending debts from shared transactions (Lent - Borrowed).
+- **Net Position:** Total standing (Realized + Unrealized).
+
+### 4. Transactions & Activity
+
+- The system treats both `Transaction` and `Payment` (settlements) as "Activity".
+- Data from multiple models is unified into an `ActivityItem` type for display in the transaction history.
+
+### 5. UI & Styling
+
+- **Tailwind CSS 4:** Use utility classes for styling. Note that Tailwind 4 has different configuration patterns than v3.
+- **Client vs. Server:** Prefer Server Components for data-heavy pages. Use Client Components for interactive elements like the `ActivityLayout` or charts.
+- **TanStack Table:** Used for complex list views (like transaction history) with sorting and filtering.
 
 ## Development Mandates
-- **Type Safety:** Ensure all new code is strictly typed. Avoid `any`.
-- **Server Components:** Prefer Server Components for data fetching. Use Client Components only when interactivity or client-side hooks (e.g., `usePathname`, `useState`) are required.
-- **Error Handling:** Implement proper error boundaries and loading states (using `loading.tsx` and `error.tsx`).
-- **Performance:** Utilize parallel data fetching in Server Components where appropriate (e.g., using `Promise.all`).
-- **Surgical Edits:** When modifying existing logic, maintain the existing architectural patterns and naming conventions.
+
+- **Type Safety:** Strict typing is mandatory. Use the generated Prisma types where possible.
+- **Surgical Edits:** Maintain existing naming conventions (e.g., `_lib` for route-specific logic).
+- **Performance:** Ensure data fetching is optimized and avoid redundant database calls.
+- **Error Handling:** Use `loading.tsx` for transitions and implement proper error states.
 
 ## Common Commands
+
+:\*\* Used for complex list views (like transaction history) with sorting and filtering.
+
+## Development Mandates
+
+- **Type Safety:** Strict typing is mandatory. Use the generated Prisma types where possible.
+- **Surgical Edits:** Maintain existing naming conventions (e.g., `_lib` for route-specific logic).
+- **Performance:** Ensure data fetching is optimized and avoid redundant database calls.
+- **Error Handling:** Use `loading.tsx` for transitions and implement proper error states.
+
+## Common Commands
+
 - `npm run dev`: Start the development server.
-- `npm run build`: Build the application for production.
-- `npx prisma generate`: Generate the Prisma client.
-- `npx prisma db push`: Sync the Prisma schema with the database (development).
-- `npx prisma migrate dev`: Create and run a new migration (production/staging).
+- `npm run build`: Build the application.
+- `npx prisma generate`: Update the Prisma client after schema changes.
+- `npx prisma db push`: Sync schema changes to the local/dev database.
+- `npx prisma migrate dev`: Create a new migration for production-tracked changes.
