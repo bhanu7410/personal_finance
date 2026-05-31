@@ -7,6 +7,7 @@ import {
     SortingState,
     VisibilityState,
 } from "@tanstack/react-table";
+
 import { formatCurrency } from "@/lib/utils";
 import { ActivityItem } from "./types";
 import {
@@ -128,14 +129,13 @@ export function ActivityList({
             table.resetColumnSizing();
         }
     };
+    console.log(5 * 4);
 
     return (
         <div className="flex h-full flex-col">
             {/* Header section with Title and Customise button */}
-            <div className="flex items-center justify-between border-b border-gray-100 p-5 shrink-0">
-                <h2 className="font-semibold text-gray-900">
-                    Recent Activity
-                </h2>
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-5">
+                <h2 className="font-semibold text-gray-900">Recent Activity</h2>
                 <div className="relative">
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -154,16 +154,18 @@ export function ActivityList({
                                 <input
                                     type="checkbox"
                                     checked={isResizingEnabled}
-                                    onChange={(e) => toggleResizing(e.target.checked)}
+                                    onChange={(e) =>
+                                        toggleResizing(e.target.checked)
+                                    }
                                     className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
                                 />
                                 <span className="text-sm font-medium text-gray-700">
                                     Enable Resizing
                                 </span>
                             </label>
-                            
+
                             <div className="my-2 border-t border-gray-100" />
-                            
+
                             <div className="mb-2 px-2 text-xs font-semibold text-gray-500 uppercase">
                                 Toggle Columns
                             </div>
@@ -206,7 +208,11 @@ export function ActivityList({
                                 {headerGroup.headers.map((header) => (
                                     <th
                                         key={header.id}
-                                        style={isResizingEnabled ? { width: header.getSize() } : {}}
+                                        style={
+                                            isResizingEnabled
+                                                ? { width: header.getSize() }
+                                                : {}
+                                        }
                                         className="group relative bg-gray-50/80 px-4 py-3 text-xs font-medium tracking-wider text-gray-500 uppercase select-none"
                                     >
                                         {header.isPlaceholder ? null : (
@@ -269,7 +275,13 @@ export function ActivityList({
                                         return (
                                             <td
                                                 key={cell.id}
-                                                style={isResizingEnabled ? { width: cell.column.getSize() } : {}}
+                                                style={
+                                                    isResizingEnabled
+                                                        ? {
+                                                              width: cell.column.getSize(),
+                                                          }
+                                                        : {}
+                                                }
                                                 className={`px-4 py-3 whitespace-nowrap transition-colors duration-300 ${
                                                     isSelected
                                                         ? "border-y-4 border-dashed border-orange-400 bg-orange-100"
