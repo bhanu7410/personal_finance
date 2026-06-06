@@ -75,6 +75,33 @@ const columns = [
             <span className="text-sm text-gray-500">{info.getValue()}</span>
         ),
     }),
+    columnHelper.accessor("groupName", {
+        header: "Group",
+        size: 140,
+        cell: (info) => (
+            <span className="text-sm text-gray-500">
+                {info.getValue() || "-"}
+            </span>
+        ),
+    }),
+    columnHelper.accessor("hasReceipt", {
+        header: "Receipt",
+        size: 100,
+        cell: (info) => (
+            <span className="text-sm text-gray-500">
+                {info.getValue() ? "Yes" : "No"}
+            </span>
+        ),
+    }),
+    columnHelper.accessor("splitCount", {
+        header: "Split",
+        size: 100,
+        cell: (info) => (
+            <span className="text-sm text-gray-500">
+                {info.getValue() > 0 ? info.getValue() : "-"}
+            </span>
+        ),
+    }),
     columnHelper.accessor("amount", {
         header: () => <div className="text-right">Amount</div>,
         size: 120,
@@ -84,10 +111,14 @@ const columns = [
                 <div
                     className={`text-right text-sm font-semibold ${item.isIncome ? "text-green-600" : "text-red-500"}`}
                 >
-                    {item.isIncome ? "+ " : "- "}
-                    {formatCurrency(info.getValue())}
+                    {formatCurrency((item.isIncome ? 1 : -1) * info.getValue())}
                 </div>
             );
+        },
+        sortingFn: (a, b) => {
+            const amountA = a.original.amount * (a.original.isIncome ? 1 : -1);
+            const amountB = b.original.amount * (b.original.isIncome ? 1 : -1);
+            return amountA > amountB ? 1 : amountA < amountB ? -1 : 0;
         },
     }),
 ];
@@ -99,8 +130,11 @@ export function ActivityList({
 }: ActivityListProps) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [sorting, setSorting] = useState<SortingState>([]);
+
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
         currency: false,
+        hasReceipt: false,
+        splitCount: false,
     });
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isResizingEnabled, setIsResizingEnabled] = useState(true);
@@ -129,7 +163,6 @@ export function ActivityList({
             table.resetColumnSizing();
         }
     };
-    console.log(5 * 4);
 
     return (
         <div className="flex h-full flex-col">
