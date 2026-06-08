@@ -13,4 +13,13 @@ export interface ActivityItem {
     groupName?: string; // Which group this belongs to (if any)
     hasReceipt: boolean; // True if receiptUrl exists (we can show a 📎 icon later)
     splitCount: number; // How many people are splitting this?
+
+    // --- ENHANCED DETAIL FIELDS ---
+    categoryIcon?: string; // e.g. "🍔"
+    receiptUrl?: string;
+    splits?: {
+        userName: string;
+        amount: number;
+    }[];
+    payerName?: string;
 }

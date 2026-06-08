@@ -20,6 +20,8 @@ import {
     Search,
     Filter,
     X,
+    Calendar,
+    ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -159,6 +161,7 @@ export function ActivityList({
     const [sorting, setSorting] = useState<SortingState>([]);
 
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+        index: false,
         currency: false,
         hasReceipt: false,
         splitCount: false,
@@ -166,7 +169,10 @@ export function ActivityList({
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isResizingEnabled, setIsResizingEnabled] = useState(true);
 
-    const [filterMode, setFilterMode] = useState<"month" | "range">("month");
+    const [filterMode, setFilterMode] = useState<"none" | "month" | "range">(
+        "none",
+    );
+    const [isEditing, setIsEditing] = useState(false);
     const [monthValue, setMonthValue] = useState("");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
@@ -224,6 +230,7 @@ export function ActivityList({
             calculatedEnd = new Date(`${endDate}T23:59:59.999`).toISOString();
         }
 
+        setIsEditing(false);
         onApplyFilter(calculatedStart, calculatedEnd);
     }
 
@@ -231,34 +238,180 @@ export function ActivityList({
         setMonthValue("");
         setStartDate("");
         setEndDate("");
+        setFilterMode("none");
+        setIsEditing(false);
         onClearFilter();
     }
 
-    const hasActiveInput = monthValue || (startDate && endDate);
-
     return (
         <div className="flex h-full flex-col">
-            {/*  Header Row */}
-            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-5">
-                <h2 className="text-lg font-semibold text-gray-900">
-                    Recent Activity
-                </h2>
+            {/* UNIFIED TOOLBAR */}
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 bg-white px-5 py-3">
+                <div className="flex flex-1 items-center gap-2">
+                    {filterMode === "none" ? (
+                        <>
+                            <button
+                                onClick={() => {
+                                    setFilterMode("month");
+                                    setIsEditing(true);
+                                }}
+                                className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-600 transition-all hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+                            >
+                                <Calendar className="h-4 w-4" />
+                                Month
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setFilterMode("range");
+                                    setIsEditing(true);
+                                }}
+                                className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-600 transition-all hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+                            >
+                                <Filter className="h-4 w-4" />
+                                Date Range
+                            </button>
+                        </>
+                    ) : filterMode === "month" ? (
+                        isEditing || !isFiltering ? (
+                            <div className="animate-in fade-in zoom-in-95 flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50/30 p-1 pl-4 duration-200">
+                                <span className="text-xs font-semibold tracking-wider text-orange-600 uppercase">
+                                    Month
+                                </span>
+                                <input
+                                    type="month"
+                                    value={monthValue}
+                                    onChange={(e) =>
+                                        setMonthValue(e.target.value)
+                                    }
+                                    className="bg-transparent text-sm font-medium text-gray-900 [color-scheme:light] outline-none"
+                                />
+                                <div className="flex items-center gap-1 pl-2">
+                                    <button
+                                        onClick={handleApply}
+                                        disabled={!monthValue}
+                                        className="rounded-full bg-orange-600 px-3 py-1 text-xs font-bold text-white hover:bg-orange-700 disabled:opacity-50"
+                                    >
+                                        Apply
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (!isFiltering)
+                                                setFilterMode("none");
+                                            setIsEditing(false);
+                                        }}
+                                        className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-1.5 text-sm font-semibold text-orange-700 transition-all hover:bg-orange-100"
+                            >
+                                <Calendar className="h-4 w-4" />
+                                {new Date(
+                                    monthValue + "-01",
+                                ).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    year: "numeric",
+                                })}
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleClear();
+                                    }}
+                                    className="ml-1 rounded-full p-0.5 hover:bg-orange-200"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </div>
+                            </button>
+                        )
+                    ) : isEditing || !isFiltering ? (
+                        <div className="animate-in fade-in zoom-in-95 flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50/30 p-1 pl-4 duration-200">
+                            <span className="text-xs font-semibold tracking-wider text-orange-600 uppercase">
+                                Range
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) =>
+                                        setStartDate(e.target.value)
+                                    }
+                                    className="bg-transparent text-sm font-medium text-gray-900 [color-scheme:light] outline-none"
+                                />
+                                <ChevronRight className="h-3 w-3 text-gray-400" />
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="bg-transparent text-sm font-medium text-gray-900 [color-scheme:light] outline-none"
+                                />
+                            </div>
+                            <div className="flex items-center gap-1 pl-2">
+                                <button
+                                    onClick={handleApply}
+                                    disabled={!startDate || !endDate}
+                                    className="rounded-full bg-orange-600 px-3 py-1 text-xs font-bold text-white hover:bg-orange-700 disabled:opacity-50"
+                                >
+                                    Apply
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (!isFiltering) setFilterMode("none");
+                                        setIsEditing(false);
+                                    }}
+                                    className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-1.5 text-sm font-semibold text-orange-700 transition-all hover:bg-orange-100"
+                        >
+                            <Filter className="h-4 w-4" />
+                            {new Date(startDate).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                            })}{" "}
+                            -{" "}
+                            {new Date(endDate).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                            })}
+                            <div
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleClear();
+                                }}
+                                className="ml-1 rounded-full p-0.5 hover:bg-orange-200"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </div>
+                        </button>
+                    )}
+                </div>
 
                 <div className="relative">
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="flex items-center gap-2 rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                        className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm font-medium text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900"
                     >
                         <Settings2 className="h-4 w-4" />
                         Columns
                     </button>
 
                     {isMenuOpen && (
-                        <div className="absolute top-10 right-0 z-50 w-56 rounded-md border border-gray-200 bg-white p-2 shadow-lg">
-                            <div className="mb-2 px-2 text-xs font-semibold text-gray-500 uppercase">
-                                Settings
+                        <div className="animate-in fade-in slide-in-from-top-2 absolute top-10 right-0 z-50 w-56 rounded-xl border border-gray-200 bg-white p-2 shadow-xl duration-200">
+                            <div className="mb-2 px-2 text-xs font-bold tracking-widest text-gray-400 uppercase">
+                                View Options
                             </div>
-                            <label className="mb-2 flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-gray-50">
+                            <label className="mb-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-2 hover:bg-gray-50">
                                 <input
                                     type="checkbox"
                                     checked={isResizingEnabled}
@@ -267,117 +420,38 @@ export function ActivityList({
                                     }
                                     className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
                                 />
-                                <span className="text-sm font-medium text-gray-700">
-                                    Enable Resizing
+                                <span className="text-sm font-semibold text-gray-700">
+                                    Resizable Columns
                                 </span>
                             </label>
 
                             <div className="my-2 border-t border-gray-100" />
 
-                            <div className="mb-2 px-2 text-xs font-semibold text-gray-500 uppercase">
-                                Toggle Columns
+                            <div className="mb-2 px-2 text-xs font-bold tracking-widest text-gray-400 uppercase">
+                                Visible Columns
                             </div>
-                            {table.getAllLeafColumns().map((column) => {
-                                return (
-                                    <label
-                                        key={column.id}
-                                        className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-gray-50"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={column.getIsVisible()}
-                                            onChange={column.getToggleVisibilityHandler()}
-                                            className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
-                                        />
-                                        <span className="text-sm text-gray-700 capitalize">
-                                            {column.id}
-                                        </span>
-                                    </label>
-                                );
-                            })}
+                            <div className="max-h-48 overflow-y-auto">
+                                {table.getAllLeafColumns().map((column) => {
+                                    return (
+                                        <label
+                                            key={column.id}
+                                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-50"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={column.getIsVisible()}
+                                                onChange={column.getToggleVisibilityHandler()}
+                                                className="rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                                            />
+                                            <span className="text-sm text-gray-600 capitalize">
+                                                {column.id}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
-                </div>
-            </div>
-
-            {/* DATE FILTER*/}
-            <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b border-gray-100 bg-gray-50/80 px-5 py-4">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-gray-400">
-                        <Filter className="h-4 w-4" />
-                        <span className="text-xs font-semibold tracking-wider uppercase">
-                            Filter
-                        </span>
-                    </div>
-
-                    <div className="h-6 w-px bg-gray-200" />
-
-                    <div className="flex items-center gap-3">
-                        <select
-                            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
-                            value={filterMode}
-                            onChange={(e) =>
-                                setFilterMode(
-                                    e.target.value as "month" | "range",
-                                )
-                            }
-                        >
-                            <option value="month">Monthly View</option>
-                            <option value="range">Custom Range</option>
-                        </select>
-
-                        {filterMode === "month" ? (
-                            <input
-                                type="month"
-                                value={monthValue}
-                                onChange={(e) => setMonthValue(e.target.value)}
-                                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
-                            />
-                        ) : (
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) =>
-                                        setStartDate(e.target.value)
-                                    }
-                                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
-                                />
-                                <span className="text-xs font-medium text-gray-400">
-                                    TO
-                                </span>
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
-                                />
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    {hasActiveInput && (
-                        <button
-                            onClick={handleClear}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-red-500"
-                        >
-                            <X className="h-3.5 w-3.5" />
-                            Clear
-                        </button>
-                    )}
-                    <button
-                        onClick={handleApply}
-                        disabled={
-                            isFiltering ||
-                            (filterMode === "range" && (!startDate || !endDate))
-                        }
-                        className="flex items-center gap-2 rounded-lg bg-orange-600 px-5 py-1.5 text-sm font-semibold text-white shadow-sm shadow-orange-200 transition-all hover:bg-orange-700 hover:shadow-md disabled:opacity-50"
-                    >
-                        <Search className="h-4 w-4" />
-                        Apply Filter
-                    </button>
                 </div>
             </div>
 
@@ -396,7 +470,6 @@ export function ActivityList({
                             className={`w-full border-separate text-left ${isResizingEnabled ? "table-fixed" : "table-auto"}`}
                             style={{ borderSpacing: "0 6px" }}
                         >
-                            {/* THE REST OF YOUR TABLE REMAINS EXACTLY THE SAME */}
                             <thead
                                 className={`sticky top-0 z-10 bg-white/95 backdrop-blur-sm transition-shadow duration-200 ${isScrolled ? "shadow-md" : "shadow-none"}`}
                             >
@@ -504,7 +577,7 @@ export function ActivityList({
                         </table>
 
                         {/* Pagination / Load More Section */}
-                        <div className="mt-4 flex items-center justify-center p-8">
+                        <div className="mt-2 flex items-center justify-center py-4 pb-6">
                             {hasMore ? (
                                 <button
                                     onClick={onLoadMoreButtonClick}

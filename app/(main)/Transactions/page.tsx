@@ -25,7 +25,14 @@ export default async function TransactionsPage() {
             },
             orderBy: { date: "desc" },
             take: 200,
-            include: { category: true, group: true, splits: true },
+            include: {
+                category: true,
+                group: true,
+                splits: {
+                    include: { user: true },
+                },
+                payer: true,
+            },
         }),
         prisma.payment.findMany({
             where: {
@@ -69,6 +76,15 @@ export default async function TransactionsPage() {
                 groupName: txn.group?.name,
                 hasReceipt: !!txn.receiptUrl, // Converts truthy string to boolean
                 splitCount: txn.splits.length,
+
+                // --- NEW ENHANCED FIELDS ---
+                categoryIcon: txn.category?.icon || undefined,
+                receiptUrl: txn.receiptUrl || undefined,
+                payerName: txn.payer?.name || "Unknown",
+                splits: txn.splits.map((s) => ({
+                    userName: s.user?.name || "Unknown",
+                    amount: s.amount.toNumber(),
+                })),
             };
         }),
         ...topPayments.map((pmt) => {

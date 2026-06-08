@@ -146,7 +146,10 @@ export function ActivityLayout({ data }: { data: ActivityItem[] }) {
             {selectedItem && (
                 <>
                     <ResizerHandle onMouseDown={handleMouseDown} />
-                    <ActivityDetail item={selectedItem} />
+                    <ActivityDetail 
+                        item={selectedItem} 
+                        onClose={() => setSelectedItem(null)} 
+                    />
                 </>
             )}
         </div>

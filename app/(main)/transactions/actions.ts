@@ -36,7 +36,14 @@ export async function fetchMoreTransactions(
             orderBy: { date: "desc" },
             skip: offset, // <-- SKIP the ones we already loaded!
             take: 200, // <-- TAKE the next 200
-            include: { category: true, group: true, splits: true },
+            include: {
+                category: true,
+                group: true,
+                splits: {
+                    include: { user: true },
+                },
+                payer: true,
+            },
         }),
         prisma.payment.findMany({
             where: {
@@ -72,6 +79,15 @@ export async function fetchMoreTransactions(
                 groupName: txn.group?.name,
                 hasReceipt: !!txn.receiptUrl,
                 splitCount: txn.splits.length,
+
+                // --- NEW ENHANCED FIELDS ---
+                categoryIcon: txn.category?.icon || undefined,
+                receiptUrl: txn.receiptUrl || undefined,
+                payerName: txn.payer?.name || "Unknown",
+                splits: txn.splits.map((s) => ({
+                    userName: s.user?.name || "Unknown",
+                    amount: s.amount.toNumber(),
+                })),
             };
         }),
         ...topPayments.map((pmt) => {
