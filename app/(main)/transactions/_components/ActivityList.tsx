@@ -17,6 +17,9 @@ import {
     ArrowUp,
     Settings2,
     Loader2,
+    Search,
+    Filter,
+    X,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -27,6 +30,9 @@ interface ActivityListProps {
     onLoadMoreButtonClick: () => void;
     hasMore: boolean;
     isLoadingMore: boolean;
+    isFiltering: boolean;
+    onApplyFilter: (start?: string, end?: string) => void;
+    onClearFilter: () => void;
 }
 
 const columnHelper = createColumnHelper<ActivityItem>();
@@ -145,6 +151,9 @@ export function ActivityList({
     onLoadMoreButtonClick,
     hasMore,
     isLoadingMore,
+    isFiltering,
+    onApplyFilter,
+    onClearFilter,
 }: ActivityListProps) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -156,6 +165,11 @@ export function ActivityList({
     });
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isResizingEnabled, setIsResizingEnabled] = useState(true);
+
+    const [filterMode, setFilterMode] = useState<"month" | "range">("month");
+    const [monthValue, setMonthValue] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
 
     const table = useReactTable({
         data,
@@ -182,38 +196,53 @@ export function ActivityList({
         }
     };
 
+    // --- NEW: Calculate dates before sending to parent ---
+    function handleApply() {
+        let calculatedStart: string | undefined = undefined;
+        let calculatedEnd: string | undefined = undefined;
+
+        if (filterMode === "month" && monthValue) {
+            const [year, month] = monthValue.split("-");
+            calculatedStart = new Date(
+                parseInt(year),
+                parseInt(month) - 1,
+                1,
+            ).toISOString();
+            calculatedEnd = new Date(
+                parseInt(year),
+                parseInt(month),
+                0,
+                23,
+                59,
+                59,
+                999,
+            ).toISOString();
+        } else if (filterMode === "range" && startDate && endDate) {
+            calculatedStart = new Date(
+                `${startDate}T00:00:00.000`,
+            ).toISOString();
+            calculatedEnd = new Date(`${endDate}T23:59:59.999`).toISOString();
+        }
+
+        onApplyFilter(calculatedStart, calculatedEnd);
+    }
+
+    function handleClear() {
+        setMonthValue("");
+        setStartDate("");
+        setEndDate("");
+        onClearFilter();
+    }
+
+    const hasActiveInput = monthValue || (startDate && endDate);
+
     return (
         <div className="flex h-full flex-col">
-            {/* Header section with Title and Customise button */}
+            {/*  Header Row */}
             <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-5">
-                <h2 className="flex-1 font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900">
                     Recent Activity
                 </h2>
-                {hasMore ? (
-                    <div className="flex shrink-0 items-center justify-center p-3">
-                        <button
-                            onClick={() => onLoadMoreButtonClick()}
-                            disabled={isLoadingMore}
-                            className="flex items-center gap-2 rounded-full border px-6 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            {isLoadingMore ? (
-                                <>
-                                    <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
-                                    Loading more...
-                                </>
-                            ) : (
-                                "Load More Transactions"
-                            )}
-                        </button>
-                    </div>
-                ) : (
-                    // i want to keep a span saying no more data
-                    <div className="flex shrink-0 items-center justify-center p-3">
-                        <span className="text-sm text-gray-500">
-                            No more transactions to load
-                        </span>
-                    </div>
-                )}
 
                 <div className="relative">
                     <button
@@ -271,114 +300,237 @@ export function ActivityList({
                 </div>
             </div>
 
+            {/* DATE FILTER*/}
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-b border-gray-100 bg-gray-50/80 px-5 py-4">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-gray-400">
+                        <Filter className="h-4 w-4" />
+                        <span className="text-xs font-semibold tracking-wider uppercase">
+                            Filter
+                        </span>
+                    </div>
+
+                    <div className="h-6 w-px bg-gray-200" />
+
+                    <div className="flex items-center gap-3">
+                        <select
+                            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
+                            value={filterMode}
+                            onChange={(e) =>
+                                setFilterMode(
+                                    e.target.value as "month" | "range",
+                                )
+                            }
+                        >
+                            <option value="month">Monthly View</option>
+                            <option value="range">Custom Range</option>
+                        </select>
+
+                        {filterMode === "month" ? (
+                            <input
+                                type="month"
+                                value={monthValue}
+                                onChange={(e) => setMonthValue(e.target.value)}
+                                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
+                            />
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) =>
+                                        setStartDate(e.target.value)
+                                    }
+                                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
+                                />
+                                <span className="text-xs font-medium text-gray-400">
+                                    TO
+                                </span>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition-all focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    {hasActiveInput && (
+                        <button
+                            onClick={handleClear}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-500 transition-colors hover:text-red-500"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                            Clear
+                        </button>
+                    )}
+                    <button
+                        onClick={handleApply}
+                        disabled={
+                            isFiltering ||
+                            (filterMode === "range" && (!startDate || !endDate))
+                        }
+                        className="flex items-center gap-2 rounded-lg bg-orange-600 px-5 py-1.5 text-sm font-semibold text-white shadow-sm shadow-orange-200 transition-all hover:bg-orange-700 hover:shadow-md disabled:opacity-50"
+                    >
+                        <Search className="h-4 w-4" />
+                        Apply Filter
+                    </button>
+                </div>
+            </div>
+
             <div
                 className="relative max-h-full flex-1 overflow-y-auto px-2 pt-2"
                 onScroll={handleScroll}
             >
-                <table
-                    className={`w-full border-separate text-left ${isResizingEnabled ? "table-fixed" : "table-auto"}`}
-                    style={{ borderSpacing: "0 6px" }}
-                >
-                    <thead
-                        className={`sticky top-0 z-10 bg-white/95 backdrop-blur-sm transition-shadow duration-200 ${isScrolled ? "shadow-md" : "shadow-none"}`}
-                    >
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <tr key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => (
-                                    <th
-                                        key={header.id}
-                                        style={
-                                            isResizingEnabled
-                                                ? { width: header.getSize() }
-                                                : {}
-                                        }
-                                        className="group relative bg-gray-50/80 px-4 py-3 text-xs font-medium tracking-wider text-gray-500 uppercase select-none"
-                                    >
-                                        {header.isPlaceholder ? null : (
-                                            <div
-                                                className={`flex items-center gap-1 ${header.column.getCanSort() ? "cursor-pointer hover:text-gray-900" : ""}`}
-                                                onClick={header.column.getToggleSortingHandler()}
-                                            >
-                                                {flexRender(
-                                                    header.column.columnDef
-                                                        .header,
-                                                    header.getContext(),
-                                                )}
-                                                {{
-                                                    asc: (
-                                                        <ArrowUp className="h-3 w-3" />
-                                                    ),
-                                                    desc: (
-                                                        <ArrowDown className="h-3 w-3" />
-                                                    ),
-                                                }[
-                                                    header.column.getIsSorted() as string
-                                                ] ?? null}
-                                            </div>
-                                        )}
-
-                                        {isResizingEnabled && (
-                                            <div
-                                                onMouseDown={header.getResizeHandler()}
-                                                onTouchStart={header.getResizeHandler()}
-                                                className={`absolute top-0 right-0 h-full w-1.5 cursor-col-resize rounded-2xl hover:bg-orange-400/50 ${
-                                                    header.column.getIsResizing()
-                                                        ? "bg-orange-500"
-                                                        : ""
-                                                }`}
-                                            />
-                                        )}
-                                    </th>
-                                ))}
-                            </tr>
-                        ))}
-                    </thead>
-
-                    <tbody>
-                        {table.getRowModel().rows.map((row) => {
-                            const item = row.original;
-                            const isSelected = selectedItem?.id === item.id;
-                            const cells = row.getVisibleCells();
-
-                            return (
-                                <tr
-                                    key={row.id}
-                                    onClick={() => onItemClick(item)}
-                                    className="group cursor-pointer"
-                                >
-                                    {cells.map((cell, index) => {
-                                        const isFirst = index === 0;
-                                        const isLast =
-                                            index === cells.length - 1;
-
-                                        return (
-                                            <td
-                                                key={cell.id}
+                {/* --- NEW: SPINNER DURING FILTER FETCH --- */}
+                {isFiltering ? (
+                    <div className="flex h-full w-full items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                    </div>
+                ) : (
+                    <>
+                        <table
+                            className={`w-full border-separate text-left ${isResizingEnabled ? "table-fixed" : "table-auto"}`}
+                            style={{ borderSpacing: "0 6px" }}
+                        >
+                            {/* THE REST OF YOUR TABLE REMAINS EXACTLY THE SAME */}
+                            <thead
+                                className={`sticky top-0 z-10 bg-white/95 backdrop-blur-sm transition-shadow duration-200 ${isScrolled ? "shadow-md" : "shadow-none"}`}
+                            >
+                                {table.getHeaderGroups().map((headerGroup) => (
+                                    <tr key={headerGroup.id}>
+                                        {headerGroup.headers.map((header) => (
+                                            <th
+                                                key={header.id}
                                                 style={
                                                     isResizingEnabled
                                                         ? {
-                                                              width: cell.column.getSize(),
+                                                              width: header.getSize(),
                                                           }
                                                         : {}
                                                 }
-                                                className={`px-4 py-3 whitespace-nowrap transition-colors duration-300 ${
-                                                    isSelected
-                                                        ? "border-y-4 border-dashed border-orange-400 bg-orange-100"
-                                                        : "border-y-4 border-solid border-transparent bg-white shadow-sm group-hover:bg-blue-50 group-hover:shadow-md"
-                                                } ${isFirst ? (isSelected ? "rounded-l-2xl border-l-4" : "rounded-l-2xl border-l-4 border-transparent") : ""} ${isLast ? (isSelected ? "rounded-r-2xl border-r-4" : "rounded-r-2xl border-r-4 border-transparent") : ""}`}
+                                                className="group relative bg-gray-50/80 px-4 py-3 text-xs font-medium tracking-wider text-gray-500 uppercase select-none"
                                             >
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
+                                                {header.isPlaceholder ? null : (
+                                                    <div
+                                                        className={`flex items-center gap-1 ${header.column.getCanSort() ? "cursor-pointer hover:text-gray-900" : ""}`}
+                                                        onClick={header.column.getToggleSortingHandler()}
+                                                    >
+                                                        {flexRender(
+                                                            header.column
+                                                                .columnDef
+                                                                .header,
+                                                            header.getContext(),
+                                                        )}
+                                                        {{
+                                                            asc: (
+                                                                <ArrowUp className="h-3 w-3" />
+                                                            ),
+                                                            desc: (
+                                                                <ArrowDown className="h-3 w-3" />
+                                                            ),
+                                                        }[
+                                                            header.column.getIsSorted() as string
+                                                        ] ?? null}
+                                                    </div>
                                                 )}
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+
+                                                {isResizingEnabled && (
+                                                    <div
+                                                        onMouseDown={header.getResizeHandler()}
+                                                        onTouchStart={header.getResizeHandler()}
+                                                        className={`absolute top-0 right-0 h-full w-1.5 cursor-col-resize rounded-2xl hover:bg-orange-400/50 ${
+                                                            header.column.getIsResizing()
+                                                                ? "bg-orange-500"
+                                                                : ""
+                                                        }`}
+                                                    />
+                                                )}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </thead>
+
+                            <tbody>
+                                {table.getRowModel().rows.map((row) => {
+                                    const item = row.original;
+                                    const isSelected =
+                                        selectedItem?.id === item.id;
+                                    const cells = row.getVisibleCells();
+
+                                    return (
+                                        <tr
+                                            key={row.id}
+                                            onClick={() => onItemClick(item)}
+                                            className="group cursor-pointer"
+                                        >
+                                            {cells.map((cell, index) => {
+                                                const isFirst = index === 0;
+                                                const isLast =
+                                                    index === cells.length - 1;
+
+                                                return (
+                                                    <td
+                                                        key={cell.id}
+                                                        style={
+                                                            isResizingEnabled
+                                                                ? {
+                                                                      width: cell.column.getSize(),
+                                                                  }
+                                                                : {}
+                                                        }
+                                                        className={`px-4 py-3 whitespace-nowrap transition-colors duration-300 ${
+                                                            isSelected
+                                                                ? "border-y-4 border-dashed border-orange-400 bg-orange-100"
+                                                                : "border-y-4 border-solid border-transparent bg-white shadow-sm group-hover:bg-blue-50 group-hover:shadow-md"
+                                                        } ${isFirst ? (isSelected ? "rounded-l-2xl border-l-4" : "rounded-l-2xl border-l-4 border-transparent") : ""} ${isLast ? (isSelected ? "rounded-r-2xl border-r-4" : "rounded-r-2xl border-r-4 border-transparent") : ""}`}
+                                                    >
+                                                        {flexRender(
+                                                            cell.column
+                                                                .columnDef.cell,
+                                                            cell.getContext(),
+                                                        )}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+
+                        {/* Pagination / Load More Section */}
+                        <div className="mt-4 flex items-center justify-center p-8">
+                            {hasMore ? (
+                                <button
+                                    onClick={onLoadMoreButtonClick}
+                                    disabled={isLoadingMore}
+                                    className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-8 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {isLoadingMore ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
+                                            Loading more...
+                                        </>
+                                    ) : (
+                                        "Load More Transactions"
+                                    )}
+                                </button>
+                            ) : (
+                                <div className="flex flex-col items-center gap-1 text-gray-400">
+                                    <div className="h-px w-12 bg-gray-200" />
+                                    <span className="text-xs font-medium tracking-wider uppercase">
+                                        End of Activity
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

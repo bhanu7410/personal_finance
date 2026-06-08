@@ -6,8 +6,6 @@ import { ActivityList } from "./ActivityList";
 import { ActivityDetail } from "./ActivityDetail";
 import { ResizerHandle } from "./ResizerHandle";
 
-import { Loader2 } from "lucide-react";
-
 import { fetchMoreTransactions } from "../actions";
 
 export function ActivityLayout({ data }: { data: ActivityItem[] }) {
@@ -17,7 +15,14 @@ export function ActivityLayout({ data }: { data: ActivityItem[] }) {
     const [offset, setOffset] = useState(200);
     // loading state for the "Load More" button
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(data.length >= 200); // if we got 200 or more, there might be more to load
+    const [hasMore, setHasMore] = useState(data.length >= 200);
+
+    const [isFiltering, setIsFiltering] = useState(false);
+    // Stores the officially applied dates so pagination knows what to fetch
+    const [activeDates, setActiveDates] = useState<{
+        start?: string;
+        end?: string;
+    }>({});
 
     const [selectedItem, setSelectedItem] = useState<ActivityItem | null>(null);
     const [leftPanelWidthPct, setLeftPanelWidthPct] = useState(40);
@@ -27,16 +32,44 @@ export function ActivityLayout({ data }: { data: ActivityItem[] }) {
         if (isLoadingMore || !hasMore) return;
         setIsLoadingMore(true);
         try {
-            const newItems = await fetchMoreTransactions(offset);
+            const newItems = await fetchMoreTransactions(
+                offset,
+                activeDates.start,
+                activeDates.end,
+            );
             setTableData((prev) => [...prev, ...newItems]);
             setOffset((prev) => prev + 200);
 
-            if (newItems.length < 200) setHasMore(false); // no more to load if we got less than 200
+            if (newItems.length < 200) setHasMore(false);
         } catch (error) {
             console.error("Failed to load more transactions:", error);
         } finally {
             setIsLoadingMore(false);
         }
+    }
+
+    async function handleApplyFilter(start?: string, end?: string) {
+        setIsFiltering(true);
+        setActiveDates({ start, end });
+        setTableData([]); // Clear table so user sees the loading state
+        try {
+            // Ask server for offset 0 of the new date range
+            const newItems = await fetchMoreTransactions(0, start, end);
+            setTableData(newItems);
+            setOffset(newItems.length);
+            setHasMore(newItems.length >= 200);
+        } catch (error) {
+            console.error("Failed to filter transactions:", error);
+        } finally {
+            setIsFiltering(false);
+        }
+    }
+
+    function handleClearFilter() {
+        setActiveDates({});
+        setTableData(data); // Restore initial 200 records instantly
+        setOffset(data.length);
+        setHasMore(data.length >= 200);
     }
 
     function handleActivityOnClick(item: ActivityItem) {
@@ -103,6 +136,9 @@ export function ActivityLayout({ data }: { data: ActivityItem[] }) {
                     onLoadMoreButtonClick={handleLoadMore}
                     hasMore={hasMore}
                     isLoadingMore={isLoadingMore}
+                    isFiltering={isFiltering}
+                    onApplyFilter={handleApplyFilter}
+                    onClearFilter={handleClearFilter}
                 />
             </div>
 
