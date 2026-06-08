@@ -16,6 +16,7 @@ import {
     ArrowDown,
     ArrowUp,
     Settings2,
+    Loader2,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -23,11 +24,24 @@ interface ActivityListProps {
     data: ActivityItem[];
     selectedItem: ActivityItem | null;
     onItemClick: (item: ActivityItem) => void;
+    onLoadMoreButtonClick: () => void;
+    hasMore: boolean;
+    isLoadingMore: boolean;
 }
 
 const columnHelper = createColumnHelper<ActivityItem>();
 
 const columns = [
+    columnHelper.display({
+        id: "index",
+        header: () => "No.#",
+        size: 20,
+        cell: (info) => (
+            <div className="text-center text-xs font-medium text-gray-400">
+                {info.row.index + 1}
+            </div>
+        ),
+    }),
     columnHelper.accessor("date", {
         header: "Date",
         size: 100,
@@ -36,6 +50,7 @@ const columns = [
                 {new Date(info.getValue()).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
+                    year: "2-digit",
                 })}
             </span>
         ),
@@ -127,6 +142,9 @@ export function ActivityList({
     data,
     selectedItem,
     onItemClick,
+    onLoadMoreButtonClick,
+    hasMore,
+    isLoadingMore,
 }: ActivityListProps) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -168,7 +186,35 @@ export function ActivityList({
         <div className="flex h-full flex-col">
             {/* Header section with Title and Customise button */}
             <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-5">
-                <h2 className="font-semibold text-gray-900">Recent Activity</h2>
+                <h2 className="flex-1 font-semibold text-gray-900">
+                    Recent Activity
+                </h2>
+                {hasMore ? (
+                    <div className="flex shrink-0 items-center justify-center p-3">
+                        <button
+                            onClick={() => onLoadMoreButtonClick()}
+                            disabled={isLoadingMore}
+                            className="flex items-center gap-2 rounded-full border px-6 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {isLoadingMore ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin text-orange-500" />
+                                    Loading more...
+                                </>
+                            ) : (
+                                "Load More Transactions"
+                            )}
+                        </button>
+                    </div>
+                ) : (
+                    // i want to keep a span saying no more data
+                    <div className="flex shrink-0 items-center justify-center p-3">
+                        <span className="text-sm text-gray-500">
+                            No more transactions to load
+                        </span>
+                    </div>
+                )}
+
                 <div className="relative">
                     <button
                         onClick={() => setIsMenuOpen(!isMenuOpen)}

@@ -6,10 +6,38 @@ import { ActivityList } from "./ActivityList";
 import { ActivityDetail } from "./ActivityDetail";
 import { ResizerHandle } from "./ResizerHandle";
 
+import { Loader2 } from "lucide-react";
+
+import { fetchMoreTransactions } from "../actions";
+
 export function ActivityLayout({ data }: { data: ActivityItem[] }) {
+    // state to store the data in
+    const [tableData, setTableData] = useState<ActivityItem[]>(data);
+    // save the current offset for pagination
+    const [offset, setOffset] = useState(200);
+    // loading state for the "Load More" button
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(data.length >= 200); // if we got 200 or more, there might be more to load
+
     const [selectedItem, setSelectedItem] = useState<ActivityItem | null>(null);
     const [leftPanelWidthPct, setLeftPanelWidthPct] = useState(40);
     const [isDragging, setIsDragging] = useState(false);
+
+    async function handleLoadMore() {
+        if (isLoadingMore || !hasMore) return;
+        setIsLoadingMore(true);
+        try {
+            const newItems = await fetchMoreTransactions(offset);
+            setTableData((prev) => [...prev, ...newItems]);
+            setOffset((prev) => prev + 200);
+
+            if (newItems.length < 200) setHasMore(false); // no more to load if we got less than 200
+        } catch (error) {
+            console.error("Failed to load more transactions:", error);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    }
 
     function handleActivityOnClick(item: ActivityItem) {
         setSelectedItem((prev) => (prev?.id === item.id ? null : item));
@@ -69,9 +97,12 @@ export function ActivityLayout({ data }: { data: ActivityItem[] }) {
                 }
             >
                 <ActivityList
-                    data={data}
+                    data={tableData}
                     selectedItem={selectedItem}
                     onItemClick={handleActivityOnClick}
+                    onLoadMoreButtonClick={handleLoadMore}
+                    hasMore={hasMore}
+                    isLoadingMore={isLoadingMore}
                 />
             </div>
 
