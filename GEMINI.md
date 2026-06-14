@@ -22,6 +22,7 @@ This is a personal finance management application built with Next.js 16 (React 1
             - `_lib/`: Dashboard-specific data fetching logic (e.g., `getCategoryStats.ts`).
         - `transactions/`: Transaction and settlement history.
             - `_components/`: Activity list, detail views, and resizable layout components.
+        - `groups/`: Group management and split tracking.
 - `components/`: Reusable UI components (Sidebar, Charts, Skeletons).
 - `lib/`: Shared utility functions and server-side logic.
     - `auth.ts`: Authentication helpers.
@@ -56,23 +57,14 @@ The app tracks finances across three main views (see `lib/accountBalance.ts`):
 
 - The system treats both `Transaction` and `Payment` (settlements) as "Activity".
 - Data from multiple models is unified into an `ActivityItem` type for display in the transaction history.
+- **Pagination & Filtering:** Implements server-side pagination (offset-based) with a "Load More" pattern and date-range filtering.
 
 ### 5. UI & Styling
 
 - **Tailwind CSS 4:** Use utility classes for styling. Note that Tailwind 4 has different configuration patterns than v3.
 - **Client vs. Server:** Prefer Server Components for data-heavy pages. Use Client Components for interactive elements like the `ActivityLayout` or charts.
-- **TanStack Table:** Used for complex list views (like transaction history) with sorting and filtering.
-
-## Development Mandates
-
-- **Type Safety:** Strict typing is mandatory. Use the generated Prisma types where possible.
-- **Surgical Edits:** Maintain existing naming conventions (e.g., `_lib` for route-specific logic).
-- **Performance:** Ensure data fetching is optimized and avoid redundant database calls.
-- **Error Handling:** Use `loading.tsx` for transitions and implement proper error states.
-
-## Common Commands
-
-:\*\* Used for complex list views (like transaction history) with sorting and filtering.
+- **TanStack Table:** Used for complex list views with features like column resizing, sorting, and custom cell rendering.
+- **Interactive Layouts:** Resizable panels (e.g., in the transactions view) allow side-by-side list and detail views.
 
 ## Development Mandates
 

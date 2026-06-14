@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 💰 Personal Finance
 
-## Getting Started
+A modern, high-performance financial management application built with **Next.js 15 (React 19)**, **Tailwind CSS 4**, and **Prisma**. Designed for individuals and groups who need surgical precision in tracking expenses, income, and shared social debts.
 
-First, run the development server:
+## 🚀 The Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Framework:** Next.js 15 (App Router, React 19)
+- **Styling:** Tailwind CSS 4 (The future of utility-first CSS)
+- **Database:** PostgreSQL with Prisma 7.2.0
+- **Auth:** [Stack](https://stackframe.com/) (Managed, secure authentication)
+- **UI Components:** TanStack Table (Data handling), Lucide React (Iconography)
+- **Visualization:** Recharts & Nivo (Financial insights)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 💎 Key Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🏦 Split-Ledger Financial Model
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The core engine distinguishes between different types of financial standing:
 
-## Learn More
+- **Realized (Cash Flow):** Your actual money in/out.
+- **Unrealized (Social):** Pending debts and credits from shared group expenses.
+- **Net Position:** Your true total worth (Realized + Unrealized).
 
-To learn more about Next.js, take a look at the following resources:
+### 📊 Advanced Activity Tracking
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Unified Activity Feed:** View Personal, Group, Split, and Transfer activity in one place.
+- **High-Performance Tables:** TanStack Table integration with column resizing, custom sorting, and server-side pagination.
+- **Deep Filtering:** Instant filtering by month or custom date ranges.
+- **Resizable Layouts:** Modern "List-Detail" interface with draggable resizers for a desktop-class experience.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 👥 Group Expense Management
 
-## Deploy on Vercel
+- Create groups and manage members.
+- Track who paid and how expenses are split.
+- Integrated settlement system (Transfers) to clear social debts.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🛠️ Getting Started
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Prerequisites
+
+- Node.js 20+
+- PostgreSQL database
+
+### Installation
+
+1. **Clone the repository:**
+
+    ```bash
+    git clone <repo-url>
+    cd personal-finance
+    ```
+
+2. **Install dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+3. **Environment Setup:**
+   Create a `.env` file and add your database and Stack authentication keys.
+
+    ```env
+    DATABASE_URL="postgresql://..."
+    NEXT_PUBLIC_STACK_PROJECT_ID="..."
+    STACK_SECRET_KEY="..."
+    ```
+
+4. **Database Setup:**
+
+    ```bash
+    npx prisma db push
+    npx prisma generate
+    ```
+
+5. **Run Development Server:**
+
+    ```bash
+    npm run dev
+    ```
+
+## 🏗️ Architecture
+
+- `app/(main)/`: Core application logic and routes.
+- `app/(main)/transactions/`: Highly interactive transaction ledger with custom `_components`.
+- `lib/accountBalance.ts`: The central logic for calculating realized vs. unrealized balances.
+- `prisma/schema.prisma`: A robust schema optimized for social splitting and soft-deletes.
+
+## 📝 Roadmap & TODO
+
+See [TODO.md](./TODO.md) for the latest development priorities and upcoming features.
+
+---
+
+Built with ❤️ for better financial clarity.
