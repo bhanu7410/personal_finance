@@ -10,6 +10,7 @@
 - Clicking on Group/Split should take it to it's own page if there exists one in a new page.
 - clicking the X on date filter should send it to default + offset that the data came from.
 - keep an another filter/category to show only group expeneses and only split expenses or both together.
+- insure we can filter by category, sub-category, key termm
 
 ## groups
 

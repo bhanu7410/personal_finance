@@ -1,19 +1,22 @@
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { GroupListItem } from "./_components/types";
+import { GroupLayout } from "./_components/GroupLayout";
 
 export default async function GroupsPage() {
     const user = await getCurrentUser();
     if (!user) {
         return (
             <main className="flex h-full flex-1 flex-col p-6">
-                <h1 className="mb-4 text-2xl font-bold">Transactions</h1>
-                <p>Please log in to view your transactions.</p>
+                <h1 className="mb-4 text-2xl font-bold">Groups</h1>
+                <p>Please log in to view your groups.</p>
             </main>
         );
     }
 
     const currentUserId = user.id;
 
+    // Fetch groups where the user is a member
     const groups = await prisma.group.findMany({
         where: {
             members: {
@@ -23,33 +26,59 @@ export default async function GroupsPage() {
             },
         },
         include: {
-            transactions: {
-                where: {
-                    deletedAt: null, // CRITICAL: Hides deleted transactions
-                },
-            },
             members: {
                 include: {
                     user: true,
                 },
             },
+            transactions: {
+                where: {
+                    deletedAt: null,
+                },
+                select: {
+                    amount: true,
+                },
+            },
+        },
+        orderBy: {
+            createdAt: "desc",
         },
     });
 
-    console.log("User's groups:", groups.length);
+    // Transform data for the UI
+    const groupListData: GroupListItem[] = groups.map((group) => {
+        const totalSpent = group.transactions.reduce(
+            (sum, txn) => sum + txn.amount.toNumber(),
+            0
+        );
+
+        return {
+            id: group.id,
+            name: group.name,
+            description: group.description,
+            currency: group.currency,
+            totalSpent,
+            memberCount: group.members.length,
+            members: group.members.map((m) => ({
+                id: m.user.id,
+                name: m.user.name || "Unknown",
+                email: m.user.email,
+                role: m.role,
+            })),
+            createdAt: group.createdAt.toISOString(),
+        };
+    });
 
     return (
         <main className="flex h-full flex-1 flex-col p-6">
-            <h1 className="mb-4 text-2xl font-bold">Groups</h1>
-            {groups.map((group) => (
-                <div key={group.id} className="mb-4 rounded border p-4">
-                    <h2 className="text-xl font-semibold">{group.name}</h2>
-                    <p className="text-sm text-gray-500">
-                        Members:{" "}
-                        {group.members.map((m) => m.user.name).join(", ")}
-                    </p>
-                </div>
-            ))}
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold">Groups</h1>
+                <p className="text-gray-500">
+                    Manage your shared expenses and group members.
+                </p>
+            </div>
+
+            <GroupLayout initialData={groupListData} />
         </main>
     );
 }
