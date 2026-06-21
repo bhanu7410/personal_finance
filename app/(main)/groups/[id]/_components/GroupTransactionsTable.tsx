@@ -42,10 +42,10 @@ const columns = [
                         {item.category?.icon || "📄"}
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-sm font-bold text-gray-900 leading-none mb-1">
+                        <span className="mb-1 text-sm leading-none font-bold text-gray-900">
                             {info.getValue()}
                         </span>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">
                             {item.category?.name || "Uncategorized"}
                         </span>
                     </div>
@@ -60,7 +60,9 @@ const columns = [
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-600">
                     {info.getValue().charAt(0).toUpperCase()}
                 </div>
-                <span className="text-sm font-semibold text-gray-700">{info.getValue()}</span>
+                <span className="text-sm font-semibold text-gray-700">
+                    {info.getValue()}
+                </span>
             </div>
         ),
     }),
@@ -91,9 +93,9 @@ export function GroupTransactionsTable({ data }: GroupTransactionsTableProps) {
             <h3 className="text-sm font-bold tracking-widest text-gray-400 uppercase">
                 Group Activity
             </h3>
-            
+
             <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full border-collapse text-left">
                     <thead className="bg-gray-50/50">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <tr key={headerGroup.id}>
@@ -106,11 +108,20 @@ export function GroupTransactionsTable({ data }: GroupTransactionsTableProps) {
                                             className={`flex items-center gap-1 ${header.column.getCanSort() ? "cursor-pointer hover:text-gray-900" : ""}`}
                                             onClick={header.column.getToggleSortingHandler()}
                                         >
-                                            {flexRender(header.column.columnDef.header, header.getContext())}
+                                            {flexRender(
+                                                header.column.columnDef.header,
+                                                header.getContext(),
+                                            )}
                                             {{
-                                                asc: <ArrowUp className="h-3 w-3" />,
-                                                desc: <ArrowDown className="h-3 w-3" />,
-                                            }[header.column.getIsSorted() as string] ?? null}
+                                                asc: (
+                                                    <ArrowUp className="h-3 w-3" />
+                                                ),
+                                                desc: (
+                                                    <ArrowDown className="h-3 w-3" />
+                                                ),
+                                            }[
+                                                header.column.getIsSorted() as string
+                                            ] ?? null}
                                         </div>
                                     </th>
                                 ))}
@@ -119,13 +130,16 @@ export function GroupTransactionsTable({ data }: GroupTransactionsTableProps) {
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                         {table.getRowModel().rows.map((row) => (
-                            <tr 
-                                key={row.id} 
+                            <tr
+                                key={row.id}
                                 className="group transition-colors hover:bg-gray-50/50"
                             >
                                 {row.getVisibleCells().map((cell) => (
                                     <td key={cell.id} className="px-6 py-4">
-                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        {flexRender(
+                                            cell.column.columnDef.cell,
+                                            cell.getContext(),
+                                        )}
                                     </td>
                                 ))}
                             </tr>
@@ -134,11 +148,15 @@ export function GroupTransactionsTable({ data }: GroupTransactionsTableProps) {
                 </table>
                 {data.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="rounded-full bg-gray-50 p-4 mb-4">
+                        <div className="mb-4 rounded-full bg-gray-50 p-4">
                             <Receipt className="h-8 w-8 text-gray-300" />
                         </div>
-                        <p className="text-sm font-bold text-gray-900">No transactions found</p>
-                        <p className="text-xs text-gray-500 mt-1">Try clearing your filters.</p>
+                        <p className="text-sm font-bold text-gray-900">
+                            No transactions found
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                            Try clearing your filters.
+                        </p>
                     </div>
                 )}
             </div>
