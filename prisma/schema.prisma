@@ -6,12 +6,13 @@
 
 generator client {
   provider = "prisma-client"
-  // output   = "../prisma/generated"
+  output   = "../prisma/generated"
   // engineType = "library"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // 1. The User
@@ -78,14 +79,19 @@ model GroupMember {
 
 // 3. Categories (Hybrid: System Defaults + User Custom)
 model Category {
-  id      String       @id @default(cuid())
-  name    String
-  type    CategoryType
-  icon    String?      // e.g. "🍔", "fa-home"
+  id       String       @id @default(cuid())
+  name     String
+  type     CategoryType
+  icon     String?      // e.g. "🍔", "fa-home"
+
+  // --- SUB-CATEGORY LOGIC ---
+  parentId String?
+  parent   Category?    @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[]   @relation("CategoryHierarchy")
 
   // If userId is null, it's a global system category
-  userId  String?
-  user    User?   @relation(fields: [userId], references: [id])
+  userId   String?
+  user     User?        @relation(fields: [userId], references: [id])
   
   transactions Transaction[]
 

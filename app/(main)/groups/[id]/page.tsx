@@ -24,7 +24,7 @@ export default async function GroupDetailPage({
             transactions: {
                 where: { deletedAt: null },
                 include: {
-                    category: true,
+                    category: { include: { parent: true } },
                     payer: true,
                 },
                 orderBy: { date: "desc" },
@@ -47,7 +47,10 @@ export default async function GroupDetailPage({
         category: txn.category ? {
             id: txn.category.id,
             name: txn.category.name,
-            icon: txn.category.icon
+            icon: txn.category.icon,
+            parentId: txn.category.parentId,
+            parentName: txn.category.parent?.name || null,
+            parentIcon: txn.category.parent?.icon || null,
         } : null,
         payer: {
             id: txn.payer.id,

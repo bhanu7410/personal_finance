@@ -22,36 +22,100 @@ export function GroupDashboardClient({
 
     // 1. All-time Category Stats (Unfiltered) for the Bar Chart
     const categoryStats = useMemo(() => {
-        const statsMap = new Map<string, { id: string; name: string; icon: string | null; amount: number }>();
+        const parentStatsMap = new Map<string, any>();
         const total = transactions.reduce((sum, t) => sum + t.amount, 0);
         
         transactions.forEach((txn) => {
-            const catId = txn.category?.id || "uncategorized";
-            const current = statsMap.get(catId) || { 
-                id: catId, 
-                name: txn.category?.name || "Uncategorized", 
-                icon: txn.category?.icon || "📄", 
-                amount: 0 
-            };
-            current.amount += txn.amount;
-            statsMap.set(catId, current);
+            const cat = txn.category;
+            const isSub = !!cat?.parentId;
+            const parentId = isSub ? cat.parentId! : (cat?.id || "uncategorized");
+            
+            // Get or create parent stat
+            let parentStat = parentStatsMap.get(parentId);
+            if (!parentStat) {
+                parentStat = {
+                    id: parentId,
+                    name: isSub ? (cat.parentName || "Unknown Parent") : (cat?.name || "Uncategorized"),
+                    icon: isSub ? (cat.parentIcon || "📁") : (cat?.icon || "📄"),
+                    amount: 0,
+                    subStatsMap: new Map<string, any>()
+                };
+                parentStatsMap.set(parentId, parentStat);
+            }
+            
+            parentStat.amount += txn.amount;
+            
+            // Track subcategory
+            if (isSub) {
+                let subStat = parentStat.subStatsMap.get(cat.id);
+                if (!subStat) {
+                    subStat = { id: cat.id, name: cat.name, icon: cat.icon, amount: 0 };
+                    parentStat.subStatsMap.set(cat.id, subStat);
+                }
+                subStat.amount += txn.amount;
+            } else if (cat) {
+                let subStat = parentStat.subStatsMap.get("general");
+                if (!subStat) {
+                    subStat = { id: "general", name: "General", icon: cat.icon, amount: 0 };
+                    parentStat.subStatsMap.set("general", subStat);
+                }
+                subStat.amount += txn.amount;
+            }
         });
 
-        const colors = ["#f97316", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899", "#06b6d4", "#eab308", "#6366f1"];
+        // Dynamic distinct colors for parents using chroma
+        const parents = Array.from(parentStatsMap.values()).sort((a, b) => b.amount - a.amount);
+        const baseColors = ["#f97316", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899", "#06b6d4", "#eab308", "#6366f1"];
+        
+        // If there are more parents than base colors, generate a scale
+        let parentColors = baseColors;
+        // Require chroma inline if not imported at top to avoid messing up imports if multiple chunks used
+        const chroma = require("chroma-js");
+        if (parents.length > baseColors.length) {
+            parentColors = chroma.scale(['#f97316', '#3b82f6', '#10b981', '#ec4899']).mode('lch').colors(parents.length);
+        }
 
-        return Array.from(statsMap.values())
-            .map((stat, idx) => ({
-                ...stat,
-                percentage: total > 0 ? (stat.amount / total) * 100 : 0,
-                color: colors[idx % colors.length]
-            }))
-            .sort((a, b) => b.amount - a.amount);
+        return parents.map((parentStat, idx) => {
+            const parentColor = parentColors[idx % parentColors.length];
+            const subStats = Array.from(parentStat.subStatsMap.values()).sort((a: any, b: any) => b.amount - a.amount);
+            
+            let subColors = [parentColor];
+            if (subStats.length > 1) {
+                subColors = chroma.scale([chroma(parentColor).darken(1), chroma(parentColor).brighten(1)]).colors(subStats.length);
+            }
+
+            const subcategories = subStats.map((sub: any, subIdx) => ({
+                id: sub.id,
+                name: sub.name,
+                icon: sub.icon,
+                amount: sub.amount,
+                percentage: (sub.amount / parentStat.amount) * 100,
+                color: subColors[subIdx]
+            }));
+
+            // Only consider it having subcategories if there's more than just the "General" one
+            const hasActualSubcategories = subcategories.length > 1 || (subcategories.length === 1 && subcategories[0].id !== "general");
+
+            return {
+                id: parentStat.id,
+                name: parentStat.name,
+                icon: parentStat.icon,
+                amount: parentStat.amount,
+                percentage: total > 0 ? (parentStat.amount / total) * 100 : 0,
+                color: parentColor,
+                subcategories: hasActualSubcategories ? subcategories : undefined
+            };
+        });
     }, [transactions]);
 
     // 2. Filter data based on selection
     const activeTransactions = useMemo(() => {
         if (!selectedCategoryId) return transactions;
-        return transactions.filter(t => (t.category?.id || "uncategorized") === selectedCategoryId);
+        return transactions.filter(t => {
+            const catId = t.category?.id || "uncategorized";
+            const parentId = t.category?.parentId;
+            return catId === selectedCategoryId || parentId === selectedCategoryId;
+        });
     }, [transactions, selectedCategoryId]);
 
     const activeTotalSpent = useMemo(() => {

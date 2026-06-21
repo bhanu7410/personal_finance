@@ -8,6 +8,9 @@ export interface GroupTransaction {
         id: string;
         name: string;
         icon: string | null;
+        parentId: string | null;
+        parentName: string | null;
+        parentIcon: string | null;
     } | null;
     payer: {
         id: string;
@@ -29,4 +32,5 @@ export interface CategoryStat {
     amount: number;
     percentage: number;
     color: string;
+    subcategories?: CategoryStat[];
 }
