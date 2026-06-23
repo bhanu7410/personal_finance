@@ -8,6 +8,7 @@ import {
     Users,
     ClipboardPlus,
     SlidersHorizontal,
+    // UserCircle,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -20,6 +21,7 @@ export default function Sidebar() {
         { name: "Transactions", href: "/transactions", icon: BadgeDollarSign },
         { name: "Groups", href: "/groups", icon: Users },
         { name: "Reports", href: "/reports", icon: ClipboardPlus },
+        // { name: "Profile", href: "/profile", icon: UserCircle },
         { name: "Settings", href: "/settings", icon: SlidersHorizontal },
     ];
 

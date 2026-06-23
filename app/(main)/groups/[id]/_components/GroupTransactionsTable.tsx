@@ -58,7 +58,12 @@ const columns = [
         cell: (info) => (
             <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-600">
-                    {info.getValue().charAt(0).toUpperCase()}
+                    {info
+                        .getValue()
+                        .split(" ")
+                        .map((n: string) => n.charAt(0))
+                        .join("")
+                        .toUpperCase()}
                 </div>
                 <span className="text-sm font-semibold text-gray-700">
                     {info.getValue()}

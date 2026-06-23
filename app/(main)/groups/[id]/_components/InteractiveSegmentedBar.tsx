@@ -187,28 +187,24 @@ export function InteractiveSegmentedBar({
 
             {renderBarAndLegend(stats, false)}
 
-            {activeParentStat && (
-                <div className="pt-2">
-                    <div className="mb-4 h-px w-full bg-gray-100" />
-                    <div className="mb-3 flex items-center justify-between">
-                        <h4 className="text-[9px] font-black tracking-widest text-gray-400 uppercase">
-                            Subcategories for {activeParentStat.name}
-                        </h4>
-                    </div>
-                    {activeParentStat.subcategories &&
-                    activeParentStat.subcategories.length > 0 ? (
-                        renderBarAndLegend(
-                            activeParentStat.subcategories,
-                            true,
-                            activeParentStat.amount,
-                        )
-                    ) : (
-                        <p className="rounded-xl border border-dashed border-gray-100 bg-gray-50 p-3 text-center text-xs font-medium text-gray-400 italic">
-                            No subcategories
-                        </p>
-                    )}
+            {/* {activeParentStat && ( */}
+            <div className="pt-2">
+                <div className="mb-4 h-px w-full bg-gray-100" />
+                <div className="mb-3 flex items-center justify-between">
+                    <h4 className="text-[9px] font-black tracking-widest text-gray-400 uppercase">
+                        {activeParentStat
+                            ? `${!activeParentStat.subcategories?.length ? "No " : ""}Subcategories for ${activeParentStat.name}`
+                            : "Category Not Selected"}
+                    </h4>
                 </div>
-            )}
+                {activeParentStat?.subcategories &&
+                    activeParentStat.subcategories.length > 0 &&
+                    renderBarAndLegend(
+                        activeParentStat.subcategories,
+                        true,
+                        activeParentStat.amount,
+                    )}
+            </div>
         </div>
     );
 }

@@ -1,4 +1,4 @@
-# Things to acomplish
+# Things to accomplish
 
 ## Transactions page
 
@@ -14,4 +14,16 @@
 
 ## groups
 
+- enable edit in main groups page and in sub groups page and also allow edits on transactions.
+- if user wants an full transactions list there should be a direct link to go to transactions page with the selected group and selected category-sub category
+
 ## reports
+
+- ignore for now.
+
+## Personal Page
+
+- make a personal page to keep all cumilative information there of that user excluding the transactions but have a link to go there.
+- consider you own UI design, that is modern fun and intuitive.
+- keep a couple of relavent and good graphs.
+- keep the profile pic name and stuff.
