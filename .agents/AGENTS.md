@@ -80,3 +80,12 @@ The app tracks finances across three main views (see `lib/accountBalance.ts`):
 - `npx prisma generate`: Update the Prisma client after schema changes.
 - `npx prisma db push`: Sync schema changes to the local/dev database.
 - `npx prisma migrate dev`: Create a new migration for production-tracked changes.
+
+## Future Premium Features
+
+### 1. Neo-Brutalist Profile Dashboard (`app/(main)/profile_neo_brute`)
+- A highly experimental, playful neo-brutalist personal profile page was developed.
+- Because its aesthetic departed too sharply from the core app's UI, it has been sidelined as a "future premium feature" (renamed to `profile_neo_brute`).
+- **Key Architectures Preserved**:
+  - **Auth**: Uses `stackServerApp.getUser()` directly from Stack to retrieve full OAuth details (like `profileImageUrl` and `primaryEmail`) which the DB `User` model lacks.
+  - **Data Fetching**: `_lib/getProfileData.ts` introduces new logic, specifically the "Friend Ledger", which accurately aggregates net balances across all `Split` and `Payment` models for individual friends.
